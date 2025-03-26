@@ -48,7 +48,7 @@ int main( int argc, char **argv )
     cl_int status;
     cl_command_queue queue = clCreateCommandQueue( context, device, 0, &status );
 
-    // Allocate memory for the grid. For simplicity, this uses a one-dimensional array.
+    // Allocate memory for the grid. For simplicity, this uses a one-dimensional array. On Host.
 	float *hostGrid = (float*) malloc( N * N * sizeof(float) );
 
 	// Fill the grid with some initial values, and display to stdout. fillGrid() is defined in the helper file.
@@ -59,6 +59,84 @@ int main( int argc, char **argv )
 	//
 	// Allocate memory for the grid(s) on the GPU and apply the heat equation as per the instructions.
 	//
+
+    // allocates memory for the orig and new grid on gpu
+    cl_mem device_grid_original = clCreateBuffer(
+        context,
+        CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+        N*N*sizeof(float),
+        hostGrid,
+        &status
+    );
+    cl_mem device_grid_new = clCreateBuffer(
+        context,
+        CL_MEM_WRITE_ONLY,
+        N*N*sizeof(float),
+        NULL,
+        &status
+    );
+
+    // compile file
+    cl_kernel kernel = compileKernelFromFile(
+        "cwk3.cl",
+        "computeCell",
+        context,
+        device
+    );
+
+
+    // set arguments
+    status = clSetKernelArg(
+        kernel,
+        0,
+        sizeof(cl_mem),
+        &device_grid_original
+    );
+
+    status = clSetKernelArg(
+        kernel,
+        1,
+        sizeof(cl_mem),
+        &device_grid_new
+    );
+
+    status = clSetKernelArg(
+        kernel,
+        2,
+        sizeof(int),
+        &N
+    );
+
+    // set group and index space size
+    size_t indexSpaceSize[2] = {N, N};
+    size_t workGroupSize[2] = {8, 8};
+
+    // start the kernel
+    status = clEnqueueNDRangeKernel(
+        queue,
+        kernel,
+        2,
+        NULL,
+        indexSpaceSize,
+        workGroupSize,
+        0,
+        NULL,
+        NULL
+    );
+
+    // get result back to host
+    status = clEnqueueReadBuffer(
+        queue,
+        device_grid_new,
+        CL_TRUE,
+        0,
+        N*N*sizeof(float),
+        hostGrid,
+        0, 
+        NULL, 
+        NULL
+    );
+
 
 	// Your solution should primarily go here.
 
@@ -73,6 +151,9 @@ int main( int argc, char **argv )
     //
     clReleaseCommandQueue( queue   );
     clReleaseContext     ( context );
+    clReleaseMemObject(device_grid_original);
+    clReleaseMemObject(device_grid_new);
+    clReleaseKernel(kernel);
 
     free( hostGrid );
 
