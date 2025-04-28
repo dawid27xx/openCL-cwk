@@ -108,8 +108,24 @@ int main( int argc, char **argv )
     );
 
     // set group and index space size
-    size_t indexSpaceSize[2] = {N, N};
-    size_t workGroupSize[2] = {8, 8};
+
+    size_t maxWorkItems ;
+    clGetDeviceInfo( device , CL_DEVICE_MAX_WORK_GROUP_SIZE ,
+                    sizeof ( size_t ) ,& maxWorkItems , NULL );
+    
+    // must satisfy: x <= n; x | N; x^2 <= maxWorkItems;
+    int x = N;
+    while (x > 0) {
+        if (x * x <= maxWorkItems && N % x == 0) {
+            break; 
+        }
+        x--;
+    }
+
+    size_t globalWorkSize[2] = {N, N};
+
+    // this needs changing
+    size_t workGroupSize[2] = {x, x};
 
     // start the kernel
     status = clEnqueueNDRangeKernel(
@@ -117,7 +133,7 @@ int main( int argc, char **argv )
         kernel,
         2,
         NULL,
-        indexSpaceSize,
+        globalWorkSize,
         workGroupSize,
         0,
         NULL,
@@ -137,8 +153,6 @@ int main( int argc, char **argv )
         NULL
     );
 
-
-	// Your solution should primarily go here.
 
     //
     // Display the final result. This assumes that the iterated grid was copied back to the hostGrid array.
