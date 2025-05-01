@@ -116,15 +116,13 @@ int main( int argc, char **argv )
     // must satisfy: x <= n; x | N; x^2 <= maxWorkItems;
     int x = N;
     while (x > 0) {
-        if (x * x <= maxWorkItems && N % x == 0) {
+        if (x * x <= maxWorkItems) {
             break; 
         }
-        x--;
-    }
+        x = x>>1;
+    };
 
     size_t globalWorkSize[2] = {N, N};
-
-    // this needs changing
     size_t workGroupSize[2] = {x, x};
 
     // start the kernel

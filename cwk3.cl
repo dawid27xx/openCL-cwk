@@ -11,10 +11,10 @@ void computeCell(__global const float *device_grid_original, __global float *dev
         return;
     }
 
-    float top    = device_grid_original[(gidy - 1) * N + gidx];
+    float top = device_grid_original[(gidy - 1) * N + gidx];
     float bottom = device_grid_original[(gidy + 1) * N + gidx];
-    float left   = device_grid_original[gidy * N + (gidx - 1)];
-    float right  = device_grid_original[gidy * N + (gidx + 1)];
+    float left = device_grid_original[gidy * N + (gidx - 1)];
+    float right = device_grid_original[gidy * N + (gidx + 1)];
 
     device_grid_new[xy] = 0.25f * (top + bottom + left + right);
 }
